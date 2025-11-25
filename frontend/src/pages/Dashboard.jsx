@@ -1,184 +1,220 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { getOutfits, deleteOutfit } from '../firebase/firestore';
+import { getOutfits, getWardrobe } from '../firebase/firestore';
 import Navbar from '../components/Navbar';
 import LoadingSpinner from '../components/LoadingSpinner';
 import toast from 'react-hot-toast';
-import { Trash2, X } from 'lucide-react';
+import { Camera, Sparkles, ShoppingBag, Heart } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, userProfile } = useAuth();
+  const [wardrobe, setWardrobe] = useState({ topwear: [], bottomwear: [] });
   const [outfits, setOutfits] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedOutfit, setSelectedOutfit] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    loadOutfits();
+    loadData();
   }, [currentUser]);
 
-  const loadOutfits = async () => {
+  const loadData = async () => {
     try {
-      const data = await getOutfits(currentUser.uid);
-      setOutfits(data);
+      const [wardrobeData, outfitsData] = await Promise.all([
+        getWardrobe(currentUser.uid),
+        getOutfits(currentUser.uid)
+      ]);
+      setWardrobe(wardrobeData);
+      setOutfits(outfitsData);
     } catch (error) {
-      console.error('Error loading outfits:', error);
-      toast.error('Failed to load outfits');
+      console.error('Error loading data:', error);
+      toast.error('Failed to load dashboard');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = async (outfitId) => {
-    if (!confirm('Are you sure you want to delete this outfit?')) return;
-
-    try {
-      await deleteOutfit(currentUser.uid, outfitId);
-      await loadOutfits();
-      setSelectedOutfit(null);
-      toast.success('Outfit deleted');
-    } catch (error) {
-      console.error('Delete error:', error);
-      toast.error('Failed to delete outfit');
-    }
-  };
+  const allClothes = [...wardrobe.topwear, ...wardrobe.bottomwear];
+  const totalItems = allClothes.length;
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navbar />
-        <LoadingSpinner text="Loading saved outfits..." />
+        <LoadingSpinner text="Loading your wardrobe..." />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
       <Navbar />
       
       <div className="max-w-7xl mx-auto px-4 py-8 pb-24 md:pb-8">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Saved Outfits</h1>
-          <p className="text-gray-600">
-            Your collection of virtual try-on outfits
+        {/* Welcome Section */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-3">
+            Welcome Back!
+          </h1>
+          <p className="text-gray-600 text-lg">
+            Your personal AI wardrobe awaits
           </p>
         </div>
 
-        {outfits.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="inline-block p-6 bg-white rounded-full shadow-lg mb-4">
-              <svg
-                className="w-16 h-16 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-                />
-              </svg>
-            </div>
-            <p className="text-gray-600 text-lg">No saved outfits yet</p>
-            <p className="text-gray-500 text-sm mt-2">
-              Try on some clothes and save your favorite combinations!
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {outfits.map((outfit) => (
-              <div
-                key={outfit.id}
-                className="bg-white rounded-xl shadow-lg overflow-hidden card-hover cursor-pointer"
-                onClick={() => setSelectedOutfit(outfit)}
-              >
-                <div className="aspect-[3/4]">
+        {/* Revolving Wardrobe Circle */}
+        <div className="relative w-full max-w-2xl mx-auto mb-16" style={{ aspectRatio: '1/1' }}>
+          {/* Center Profile Photo */}
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
+            <div className="relative">
+              <div className="w-40 h-40 md:w-56 md:h-56 rounded-full overflow-hidden shadow-2xl border-4 border-white ring-4 ring-purple-200">
+                {userProfile?.profilePhotoURL ? (
                   <img
-                    src={outfit.output_image_url}
-                    alt="Saved outfit"
+                    src={userProfile.profilePhotoURL}
+                    alt="Profile"
                     className="w-full h-full object-cover"
                   />
-                </div>
-                <div className="p-4">
-                  <p className="text-sm text-gray-500">
-                    {outfit.createdAt?.toDate?.()?.toLocaleDateString() || 'Recently saved'}
-                  </p>
-                  <div className="flex gap-2 mt-3">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(outfit.id);
-                      }}
-                      className="flex-1 flex items-center justify-center space-x-2 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition touch-feedback"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      <span className="text-sm font-medium">Delete</span>
-                    </button>
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center">
+                    <Camera className="w-20 h-20 text-white" />
                   </div>
-                </div>
+                )}
               </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Full Screen Modal */}
-      {selectedOutfit && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4 animate-fade-in"
-          onClick={() => setSelectedOutfit(null)}
-        >
-          <button
-            onClick={() => setSelectedOutfit(null)}
-            className="absolute top-4 right-4 p-2 bg-white rounded-full hover:bg-gray-100 transition touch-feedback z-10"
-          >
-            <X className="w-6 h-6 text-gray-800" />
-          </button>
-
-          <div className="relative max-w-2xl w-full max-h-[90vh] flex flex-col">
-            <img
-              src={selectedOutfit.output_image_url}
-              alt="Outfit detail"
-              className="w-full h-auto object-contain rounded-lg shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            />
-            
-            <div className="mt-4 bg-white rounded-lg p-4" onClick={(e) => e.stopPropagation()}>
-              <h3 className="font-semibold text-gray-800 mb-3">Outfit Items</h3>
-              <div className="flex gap-4">
-                <div className="flex-1">
-                  <p className="text-xs text-gray-500 mb-1">Topwear</p>
-                  <img
-                    src={selectedOutfit.topwear_url}
-                    alt="Top"
-                    className="w-full aspect-square object-cover rounded-lg"
-                  />
-                </div>
-                <div className="flex-1">
-                  <p className="text-xs text-gray-500 mb-1">Bottomwear</p>
-                  <img
-                    src={selectedOutfit.bottomwear_url}
-                    alt="Bottom"
-                    className="w-full aspect-square object-cover rounded-lg"
-                  />
-                </div>
+              <div className="absolute -bottom-2 -right-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full p-3 shadow-lg">
+                <Sparkles className="w-6 h-6 text-white" />
               </div>
-              
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDelete(selectedOutfit.id);
-                }}
-                className="w-full mt-4 flex items-center justify-center space-x-2 py-3 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition touch-feedback"
-              >
-                <Trash2 className="w-5 h-5" />
-                <span className="font-medium">Delete Outfit</span>
-              </button>
             </div>
           </div>
+
+          {/* Revolving Clothes Circle */}
+          {totalItems > 0 && (
+            <div className="absolute inset-0 animate-spin-slow">
+              {allClothes.map((item, index) => {
+                const angle = (360 / totalItems) * index;
+                const radius = 45; // percentage from center
+                const x = 50 + radius * Math.cos((angle * Math.PI) / 180);
+                const y = 50 + radius * Math.sin((angle * Math.PI) / 180);
+
+                return (
+                  <div
+                    key={item.id || index}
+                    className="absolute w-16 h-16 md:w-24 md:h-24 transform -translate-x-1/2 -translate-y-1/2 animate-float"
+                    style={{
+                      left: `${x}%`,
+                      top: `${y}%`,
+                      animationDelay: `${index * 0.1}s`,
+                    }}
+                  >
+                    <div className="relative group">
+                      <div className="w-full h-full rounded-2xl overflow-hidden shadow-lg bg-white p-2 transform transition-all duration-300 hover:scale-110 hover:shadow-2xl hover:z-20">
+                        <img
+                          src={item.url}
+                          alt={item.name || 'Clothing item'}
+                          className="w-full h-full object-cover rounded-lg"
+                        />
+                      </div>
+                      {/* Tooltip on hover */}
+                      <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                        {item.name || 'Item'}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Empty State */}
+          {totalItems === 0 && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-center text-gray-400">
+                <ShoppingBag className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                <p className="text-lg">No wardrobe items yet</p>
+              </div>
+            </div>
+          )}
         </div>
-      )}
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          <div className="bg-white rounded-2xl shadow-lg p-6 text-center transform hover:scale-105 transition">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-100 rounded-full mb-4">
+              <ShoppingBag className="w-8 h-8 text-purple-600" />
+            </div>
+            <h3 className="text-3xl font-bold text-gray-800 mb-2">{totalItems}</h3>
+            <p className="text-gray-600">Wardrobe Items</p>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-lg p-6 text-center transform hover:scale-105 transition">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-pink-100 rounded-full mb-4">
+              <Heart className="w-8 h-8 text-pink-600" />
+            </div>
+            <h3 className="text-3xl font-bold text-gray-800 mb-2">{outfits.length}</h3>
+            <p className="text-gray-600">Saved Outfits</p>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-lg p-6 text-center transform hover:scale-105 transition">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
+              <Sparkles className="w-8 h-8 text-blue-600" />
+            </div>
+            <h3 className="text-3xl font-bold text-gray-800 mb-2">AI</h3>
+            <p className="text-gray-600">Powered Try-On</p>
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <button
+            onClick={() => navigate('/try-wardrobe')}
+            className="bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-2xl shadow-lg p-8 text-left transform hover:scale-105 transition group"
+          >
+            <Sparkles className="w-12 h-12 mb-4 group-hover:rotate-12 transition" />
+            <h3 className="text-2xl font-bold mb-2">Try Outfits</h3>
+            <p className="text-purple-100">
+              Mix and match your wardrobe with AI-powered virtual try-on
+            </p>
+          </button>
+
+          <button
+            onClick={() => navigate('/saved-outfits')}
+            className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-2xl shadow-lg p-8 text-left transform hover:scale-105 transition group"
+          >
+            <Heart className="w-12 h-12 mb-4 group-hover:scale-110 transition" />
+            <h3 className="text-2xl font-bold mb-2">Saved Outfits</h3>
+            <p className="text-blue-100">
+              View and manage your favorite outfit combinations
+            </p>
+          </button>
+        </div>
+      </div>
+
+      {/* CSS for animations */}
+      <style jsx>{`
+        @keyframes spin-slow {
+          from {
+            transform: rotate(0deg);
+          }
+          to {
+            transform: rotate(360deg);
+          }
+        }
+
+        @keyframes float {
+          0%, 100% {
+            transform: translate(-50%, -50%) translateY(0px);
+          }
+          50% {
+            transform: translate(-50%, -50%) translateY(-10px);
+          }
+        }
+
+        .animate-spin-slow {
+          animation: spin-slow 30s linear infinite;
+        }
+
+        .animate-float {
+          animation: float 3s ease-in-out infinite;
+        }
+      `}</style>
     </div>
   );
 };

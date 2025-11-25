@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 // Pages
 import AuthPage from './pages/AuthPage';
 import Dashboard from './pages/Dashboard';
+import SavedOutfits from './pages/SavedOutfits';
 import UploadProfilePhoto from './pages/UploadProfilePhoto';
 import UploadWardrobe from './pages/UploadWardrobe';
 import TryWardrobe from './pages/TryWardrobe';
@@ -73,7 +74,7 @@ function AppRoutes() {
           path="/saved-outfits"
           element={
             <ProtectedRoute>
-              <Dashboard />
+              <SavedOutfits />
             </ProtectedRoute>
           }
         />

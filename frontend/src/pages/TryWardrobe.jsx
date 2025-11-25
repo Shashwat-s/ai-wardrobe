@@ -18,6 +18,7 @@ const TryWardrobe = () => {
   const [selectedTop, setSelectedTop] = useState(null);
   const [selectedBottom, setSelectedBottom] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
+  const [originalProfilePhoto, setOriginalProfilePhoto] = useState(null); // Store original photo URL
   const [activeTab, setActiveTab] = useState('topwear');
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -26,8 +27,9 @@ const TryWardrobe = () => {
 
   useEffect(() => {
     loadWardrobe();
-    // Set initial preview to user's profile photo
+    // Store and set initial preview to user's profile photo
     if (userProfile?.profilePhotoURL) {
+      setOriginalProfilePhoto(userProfile.profilePhotoURL);
       setPreviewImage(userProfile.profilePhotoURL);
     }
   }, [currentUser, userProfile]);
@@ -55,30 +57,78 @@ const TryWardrobe = () => {
       return;
     }
 
+    // Update selection first
+    const newTop = type === 'topwear' ? item : selectedTop;
+    const newBottom = type === 'bottomwear' ? item : selectedBottom;
+    
     if (type === 'topwear') {
       setSelectedTop(item);
     } else {
       setSelectedBottom(item);
     }
 
-    // Generate try-on
+    // Only generate if we have BOTH top and bottom selected
+    if (!newTop || !newBottom) {
+      toast('Select both topwear and bottomwear to generate preview', { icon: '👔👖' });
+      return;
+    }
+
+    // Generate complete outfit with both items
+    await generateCompleteOutfit(newTop, newBottom);
+  };
+
+  const generateCompleteOutfit = async (topItem, bottomItem) => {
     setGenerating(true);
     try {
-      const currentPreview = previewImage || userProfile?.profilePhotoURL;
+      // Always use the original profile photo
+      const personImage = originalProfilePhoto || userProfile?.profilePhotoURL;
       
-      if (!currentPreview) {
-        toast.error('No profile photo found');
+      if (!personImage) {
+        toast.error('No profile photo found. Please upload a profile photo first.');
+        navigate('/upload-profile-photo');
         return;
       }
 
-      const result = await generateTryOn(
-        currentPreview,
-        item.url,
-        type === 'topwear' ? 'upper' : 'lower'
+      // Ensure we're using a real URL, not a base64 data URI
+      if (personImage.startsWith('data:')) {
+        toast.error('Please upload a profile photo from your wardrobe page');
+        navigate('/upload-profile-photo');
+        return;
+      }
+
+      console.log('Generating complete outfit:');
+      console.log('  Person:', personImage);
+      console.log('  Top:', topItem.url);
+      console.log('  Bottom:', bottomItem.url);
+
+      // Generate try-on with top first
+      toast('Applying topwear...', { icon: '👕' });
+      const withTop = await generateTryOn(
+        personImage,
+        topItem.url,
+        'upper'
       );
 
-      setPreviewImage(result);
-      toast.success('Try-on generated!');
+      if (!withTop) {
+        toast.error('Failed to apply topwear');
+        return;
+      }
+
+      // Then apply bottom to the result
+      toast('Applying bottomwear...', { icon: '👖' });
+      const finalResult = await generateTryOn(
+        withTop, // Use the result from top application
+        bottomItem.url,
+        'lower'
+      );
+
+      if (!finalResult) {
+        toast.error('Failed to apply bottomwear');
+        return;
+      }
+
+      setPreviewImage(finalResult);
+      toast.success('Complete outfit generated! 🎉');
     } catch (error) {
       console.error('Try-on error:', error);
       toast.error(error.message || 'Failed to generate try-on');
@@ -161,9 +211,15 @@ const TryWardrobe = () => {
                   </div>
                 ) : previewImage ? (
                   <img
+                    key={previewImage.substring(0, 50)} // Force re-render on change
                     src={previewImage}
                     alt="Try-on preview"
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      console.error('Image failed to load:', previewImage.substring(0, 100));
+                      toast.error('Failed to display image');
+                    }}
+                    onLoad={() => console.log('Image loaded successfully')}
                   />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
