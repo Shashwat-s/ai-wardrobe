@@ -2,9 +2,10 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage
 import { storage } from './config';
 
 /**
- * Upload a file to Firebase Storage
- * @param {File} file - The file to upload
+ * Upload a file to Firebase Storage with optional background removal
+ * @param {File|Blob} file - The file to upload
  * @param {string} path - The storage path (e.g., 'users/uid/wardrobe/topwear/filename.jpg')
+ * @param {boolean} removeBackgroundFirst - Whether to remove background before uploading
  * @returns {Promise<string>} - The download URL of the uploaded file
  */
 export const uploadFile = async (file, path) => {

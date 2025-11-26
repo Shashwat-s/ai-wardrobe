@@ -24,7 +24,8 @@ const UploadProfilePhoto = () => {
       const fileName = generateUniqueFileName(file.name);
       const path = `users/${currentUser.uid}/profile/${fileName}`;
 
-      const downloadURL = await uploadFile(file, path);
+      // Upload with background removal enabled for profile photos
+      const downloadURL = await uploadFile(file, path, true);
 
       // Update Firestore
       await updateUser(currentUser.uid, {
@@ -38,7 +39,7 @@ const UploadProfilePhoto = () => {
       });
 
       setCurrentPhoto(downloadURL);
-      toast.success('Profile photo updated!');
+      toast.success('Profile photo updated with background removed!');
     } catch (error) {
       console.error('Upload error:', error);
       throw error;

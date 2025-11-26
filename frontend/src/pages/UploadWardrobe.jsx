@@ -42,11 +42,12 @@ const UploadWardrobe = () => {
     const fileArray = Array.isArray(files) ? files : [files];
 
     try {
-      // First, upload all files to storage
+      // First, upload all files to storage with background removal
       const uploadPromises = fileArray.map(async (file) => {
         const fileName = generateUniqueFileName(file.name);
         const path = `users/${currentUser.uid}/wardrobe/${activeTab}/${fileName}`;
-        const downloadURL = await uploadFile(file, path);
+        // Enable background removal for wardrobe items
+        const downloadURL = await uploadFile(file, path, true);
         return { url: downloadURL };
       });
 
@@ -56,7 +57,7 @@ const UploadWardrobe = () => {
       await saveWardrobeItems(currentUser.uid, activeTab, uploadedItems);
 
       await loadWardrobe();
-      toast.success(`${fileArray.length} item(s) uploaded!`);
+      toast.success(`${fileArray.length} item(s) uploaded with background removed!`);
     } catch (error) {
       console.error('Upload error:', error);
       throw error;

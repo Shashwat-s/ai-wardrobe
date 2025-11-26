@@ -6,7 +6,6 @@ import admin from 'firebase-admin';
 import sharp from 'sharp';
 import multer from 'multer';
 import convert from 'heic-convert';
-import { removeBackground } from '@imgly/background-removal-node';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { PredictionServiceClient } from '@google-cloud/aiplatform';
@@ -162,12 +161,9 @@ app.post('/convert-image', upload.single('image'), async (req, res) => {
   }
 });
 
-// Endpoint to remove background from images
-app.post('/remove-background', upload.single('image'), async (req, res) => {
-  try {
 
-    // Cache stats endpoint
-    app.get('/cache-stats', (req, res) => {
+// Cache stats endpoint
+app.get('/cache-stats', (req, res) => {
       const stats = getCacheStats();
       res.json({
         cache: stats,
@@ -178,7 +174,7 @@ app.post('/remove-background', upload.single('image'), async (req, res) => {
     // Try-on endpoint
     app.post('/tryon', async (req, res) => {
       try {
-        const { person_image_url, clothing_image_url, type } = req.body;
+        const { person_image_url, clothing_image_url, type, instructions } = req.body;
 
         // Validate input
         if (!person_image_url || !clothing_image_url || !type) {
@@ -198,6 +194,9 @@ app.post('/remove-background', upload.single('image'), async (req, res) => {
         console.log(`🎨 Generating try-on for ${type} clothing...`);
         console.log('Person image:', person_image_url);
         console.log('Clothing image:', clothing_image_url);
+        if (instructions) {
+          console.log('Instructions:', instructions);
+        }
 
         // Priority 1: Use Gemini API (fast, cheap, reliable)
         if (geminiEnabled) {
@@ -207,7 +206,8 @@ app.post('/remove-background', upload.single('image'), async (req, res) => {
             const result = await generateTryOnWithGemini(
               person_image_url,
               clothing_image_url,
-              type
+              type,
+              instructions || ''
             );
 
             console.log('✅ Gemini try-on completed successfully');
