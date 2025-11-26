@@ -40,7 +40,7 @@ const UploadWardrobe = () => {
 
   const handleUpload = async (files) => {
     const fileArray = Array.isArray(files) ? files : [files];
-    
+
     try {
       // First, upload all files to storage
       const uploadPromises = fileArray.map(async (file) => {
@@ -51,10 +51,10 @@ const UploadWardrobe = () => {
       });
 
       const uploadedItems = await Promise.all(uploadPromises);
-      
+
       // Then save all items to Firestore in a single batch operation
       await saveWardrobeItems(currentUser.uid, activeTab, uploadedItems);
-      
+
       await loadWardrobe();
       toast.success(`${fileArray.length} item(s) uploaded!`);
     } catch (error) {
@@ -99,7 +99,7 @@ const UploadWardrobe = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      
+
       <div className="max-w-6xl mx-auto px-4 py-8 pb-24 md:pb-8">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800 mb-2">Build Your Wardrobe</h1>
@@ -116,21 +116,19 @@ const UploadWardrobe = () => {
           <div className="flex space-x-2 mb-6">
             <button
               onClick={() => setActiveTab('topwear')}
-              className={`flex-1 py-3 px-4 rounded-lg font-medium transition touch-feedback ${
-                activeTab === 'topwear'
-                  ? 'bg-primary-600 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
+              className={`flex-1 py-3 px-4 rounded-lg font-medium transition touch-feedback ${activeTab === 'topwear'
+                ? 'bg-primary-600 text-white shadow-md'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
             >
               Topwear ({wardrobe.topwear.length})
             </button>
             <button
               onClick={() => setActiveTab('bottomwear')}
-              className={`flex-1 py-3 px-4 rounded-lg font-medium transition touch-feedback ${
-                activeTab === 'bottomwear'
-                  ? 'bg-primary-600 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
+              className={`flex-1 py-3 px-4 rounded-lg font-medium transition touch-feedback ${activeTab === 'bottomwear'
+                ? 'bg-primary-600 text-white shadow-md'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
             >
               Bottomwear ({wardrobe.bottomwear.length})
             </button>
@@ -140,6 +138,7 @@ const UploadWardrobe = () => {
             <ImageUploader
               onUpload={handleUpload}
               multiple
+              enableBackgroundRemoval={false}
               label={`Upload ${activeTab === 'topwear' ? 'Tops' : 'Bottoms'}`}
             />
           </div>

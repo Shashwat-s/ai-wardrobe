@@ -24,12 +24,12 @@ User Interface Layer
 └── Styling (TailwindCSS)
 ```
 
-### Backend (Python FastAPI)
+### Backend (Node.js Express)
 ```
 API Layer
 ├── REST API Endpoints
-├── VTON Model Integration
-├── Image Processing
+├── Gemini AI Integration
+├── Image Processing (Sharp)
 └── Result Storage
 ```
 
@@ -113,7 +113,7 @@ Dashboard → View Saved Outfits → Delete/Share → Update Wardrobe
 - HTTPS-only communication
 
 ### Backend Security
-- Request validation with Pydantic
+- Request validation
 - File type and size validation
 - Rate limiting (to be implemented)
 - CORS policy enforcement
@@ -153,7 +153,7 @@ Dashboard → View Saved Outfits → Delete/Share → Update Wardrobe
 - Visual regression tests
 
 ### Backend Testing
-- Unit tests (pytest)
+- Unit tests (Jest/Mocha)
 - API endpoint tests
 - Model inference tests
 - Load testing
@@ -212,12 +212,11 @@ Dashboard → View Saved Outfits → Delete/Share → Update Wardrobe
 ### Backend
 | Technology | Purpose | Version |
 |------------|---------|---------|
-| FastAPI | Web Framework | 0.104.1 |
-| PyTorch | ML Framework | 2.1.1 |
-| Transformers | NLP/Vision | 4.35.2 |
-| Pillow | Image Processing | 10.1.0 |
-| Firebase Admin | Storage | 6.3.0 |
-| Uvicorn | ASGI Server | 0.24.0 |
+| Node.js | Runtime | 18+ |
+| Express | Web Framework | 4.18.2 |
+| Google Gemini | AI Model | 1.5 Flash |
+| Sharp | Image Processing | 0.33.1 |
+| Firebase Admin | Storage | 12.0.0 |
 
 ## 📈 Scalability Plan
 
@@ -257,7 +256,7 @@ Dashboard → View Saved Outfits → Delete/Share → Update Wardrobe
 
 ### Required Roles
 - Frontend Developer (React/TailwindCSS)
-- Backend Developer (Python/FastAPI)
+- Backend Developer (Node.js/Express)
 - ML Engineer (VTON Model Integration)
 - UI/UX Designer (Mobile-First Design)
 - DevOps Engineer (Cloud Deployment)

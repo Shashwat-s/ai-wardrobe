@@ -65,7 +65,7 @@ function getRetryMsFromError(err, fallbackMs = 20000) {
         return sec * 1000 + frac;
       }
     }
-  } catch {}
+  } catch { }
   return fallbackMs;
 }
 
@@ -81,11 +81,12 @@ async function imageUrlToBase64(imageUrl) {
     });
 
     const buffer = Buffer.from(response.data);
-    
+
     // Optimize image size to reduce API payload
+    // Reduced from 1024 to 768 for faster processing (approx 40% smaller payload)
     const optimized = await sharp(buffer)
-      .resize(1024, 1024, { fit: 'inside', withoutEnlargement: true })
-      .jpeg({ quality: 85 })
+      .resize(768, 768, { fit: 'inside', withoutEnlargement: true })
+      .jpeg({ quality: 75 }) // Reduced quality slightly for speed
       .toBuffer();
 
     return optimized.toString('base64');
@@ -185,7 +186,7 @@ export async function generateTryOnWithGemini(personImageUrl, clothingImageUrl, 
     let resp;
     let attempt = 0;
     const maxAttempts = 3;
-    
+
     while (true) {
       try {
         resp = await genAI.models.generateContent({ model: MODEL, contents });
@@ -206,7 +207,7 @@ export async function generateTryOnWithGemini(personImageUrl, clothingImageUrl, 
     // Extract image from response - matching outfit-generator
     const parts = resp.candidates?.[0]?.content?.parts || [];
     const imagePart = parts.find((p) => p.inlineData?.data);
-    
+
     if (!imagePart) {
       const msg = parts
         .map((p) => p.text)
@@ -220,7 +221,7 @@ export async function generateTryOnWithGemini(personImageUrl, clothingImageUrl, 
     }
 
     const dataUrl = `data:image/jpeg;base64,${imagePart.inlineData.data}`;
-    
+
     console.log('✅ Try-on generated successfully with Gemini');
 
     // Cache the result

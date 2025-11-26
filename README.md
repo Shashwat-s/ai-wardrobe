@@ -22,10 +22,10 @@ A full-stack web application that allows users to virtually try on clothing usin
 - **Axios** for API communication
 
 ### Backend
-- **FastAPI** Python server
-- **NanoBanana VTON** AI model integration
+- **Node.js & Express** server
+- **Google Gemini** AI model integration
 - **Firebase Admin SDK** for storage management
-- **PyTorch** for model inference
+- **Sharp** for image processing
 - **Cloud Run** ready deployment
 
 ## 📁 Project Structure
@@ -64,9 +64,10 @@ Ai-Wardrobe/
 │   ├── tailwind.config.js
 │   └── index.html
 ├── backend/
-│   ├── app.py
-│   ├── vton_service.py
-│   ├── requirements.txt
+│   ├── server.js
+│   ├── services/
+│   │   └── geminiTryOn.js
+│   ├── package.json
 │   ├── Dockerfile
 │   └── .env.example
 └── README.md
@@ -77,7 +78,7 @@ Ai-Wardrobe/
 ### Prerequisites
 
 - Node.js 18+ and npm
-- Python 3.10+
+- Node.js 18+ and npm
 - Firebase project with Authentication, Firestore, and Storage enabled
 - Google Cloud account (for Cloud Run deployment)
 
@@ -123,15 +124,14 @@ The app will be available at `http://localhost:3000`
 cd backend
 ```
 
-2. Create a virtual environment:
+2. (Optional) Use nvm for Node version:
 ```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+nvm use 18
 ```
 
 3. Install dependencies:
 ```bash
-pip install -r requirements.txt
+npm install
 ```
 
 4. Create `.env` file:
@@ -148,7 +148,7 @@ FIREBASE_STORAGE_BUCKET=your-project.appspot.com
 
 6. Run the server:
 ```bash
-python app.py
+npm run dev
 ```
 
 The API will be available at `http://localhost:8000`
@@ -248,8 +248,8 @@ gcloud run deploy ai-wardrobe-backend \
   --platform managed \
   --region us-central1 \
   --allow-unauthenticated \
-  --memory 4Gi \
-  --cpu 2 \
+  --memory 2Gi \
+  --cpu 1 \
   --timeout 300
 ```
 
@@ -325,7 +325,7 @@ npm run lint
 ### Backend Testing
 ```bash
 cd backend
-pytest
+npm test
 ```
 
 ## 📱 Supported Browsers
@@ -350,10 +350,10 @@ This project is licensed under the MIT License.
 
 ## 🙏 Acknowledgments
 
-- NanoBanana VTON for the AI try-on technology
+- Google Gemini for the AI try-on technology
 - Firebase for backend services
 - TailwindCSS for the UI framework
-- FastAPI for the backend API
+- Express for the backend API
 
 ## 📞 Support
 
