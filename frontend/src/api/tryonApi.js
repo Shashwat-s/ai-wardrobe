@@ -5,16 +5,18 @@ import apiClient from './client';
  * @param {string} personImageUrl - URL of the person's image
  * @param {string} clothingImageUrl - URL of the clothing item
  * @param {string} type - Type of clothing ('upper' or 'lower')
+ * @param {string} instructions - Optional styling instructions
  * @returns {Promise<string>} - URL of the generated image
  */
-export const generateTryOn = async (personImageUrl, clothingImageUrl, type) => {
+export const generateTryOn = async (personImageUrl, clothingImageUrl, type, instructions = '') => {
   try {
-    console.log('Sending try-on request:', { personImageUrl, clothingImageUrl, type });
+    console.log('Sending try-on request:', { personImageUrl, clothingImageUrl, type, instructions });
     
     const response = await apiClient.post('/tryon', {
       person_image_url: personImageUrl,
       clothing_image_url: clothingImageUrl,
       type: type,
+      instructions: instructions
     });
 
     console.log('Try-on response:', response.data);

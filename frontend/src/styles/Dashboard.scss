@@ -1,0 +1,174 @@
+// Dashboard Styles
+
+.dashboard-container {
+  @apply min-h-screen bg-gray-50;
+}
+
+.dashboard-content {
+  @apply max-w-7xl mx-auto px-4 py-8 pb-24 md:pb-8;
+}
+
+.welcome-section {
+  @apply text-center mb-12;
+
+  h1 {
+    @apply text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-3;
+  }
+
+  p {
+    @apply text-gray-600 text-lg;
+  }
+}
+
+.wardrobe-circle-container {
+  @apply relative w-full max-w-2xl mx-auto mb-16;
+  aspect-ratio: 1/1;
+}
+
+.profile-photo-center {
+  @apply absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10;
+
+  .photo-wrapper {
+    @apply relative;
+
+    .photo-frame {
+      @apply w-40 h-40 md:w-56 md:h-56 rounded-full overflow-hidden shadow-2xl border-4 border-white;
+    }
+
+    .placeholder-frame {
+      @apply w-full h-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center;
+    }
+  }
+}
+
+.revolving-clothes-circle {
+  @apply absolute inset-0;
+  animation: spin-slow 30s linear infinite;
+}
+
+.clothing-item-wrapper {
+  @apply absolute w-16 h-16 md:w-24 md:h-24 transform -translate-x-1/2 -translate-y-1/2;
+  animation: float 3s ease-in-out infinite;
+
+  .item-inner {
+    @apply relative;
+
+    .item-frame {
+      @apply w-full h-full rounded-full overflow-hidden shadow-lg bg-white p-2 transform transition-all duration-300;
+    }
+
+    // Hover effect for the item frame
+    &:hover .item-frame {
+      @apply scale-110 shadow-2xl z-20;
+    }
+  }
+}
+
+.empty-state {
+  @apply absolute inset-0 flex items-center justify-center;
+
+  .empty-content {
+    @apply text-center text-gray-400;
+  }
+}
+
+.stats-grid {
+  @apply grid grid-cols-1 md:grid-cols-3 gap-6 mb-12;
+}
+
+.stat-card {
+  @apply bg-white rounded-2xl shadow-lg p-6 text-center transform hover:scale-105 transition;
+
+  .icon-wrapper {
+    @apply inline-flex items-center justify-center w-16 h-16 rounded-full mb-4;
+
+    &.purple {
+      @apply bg-purple-100;
+    }
+
+    &.pink {
+      @apply bg-pink-100;
+    }
+
+    &.blue {
+      @apply bg-blue-100;
+    }
+  }
+
+  h3 {
+    @apply text-3xl font-bold text-gray-800 mb-2;
+  }
+
+  p {
+    @apply text-gray-600;
+  }
+}
+
+.quick-actions-grid {
+  @apply grid grid-cols-1 md:grid-cols-2 gap-6;
+}
+
+.action-button {
+  @apply text-white rounded-2xl shadow-lg p-8 text-left transform hover:scale-105 transition;
+
+  &.try-outfits {
+    @apply bg-gradient-to-r from-purple-600 to-pink-600;
+  }
+
+  &.saved-outfits {
+    @apply bg-gradient-to-r from-blue-600 to-cyan-600;
+  }
+
+  h3 {
+    @apply text-2xl font-bold mb-2;
+  }
+
+  p {
+    @apply text-purple-100;
+  }
+
+  // Specific override for the blue card text
+  &.saved-outfits p {
+    @apply text-blue-100;
+  }
+
+  // Hover effects for icons
+  .action-icon {
+    @apply mb-4 transition;
+  }
+
+  &:hover {
+    .action-icon {
+      @apply rotate-12;
+    }
+  }
+
+  &.saved-outfits:hover {
+    .action-icon {
+      @apply scale-110 rotate-0; // Reset rotation for heart, use scale instead
+    }
+  }
+}
+
+// Animations
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translate(-50%, -50%) translateY(0px);
+  }
+
+  50% {
+    transform: translate(-50%, -50%) translateY(-10px);
+  }
+}

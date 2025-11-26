@@ -23,6 +23,7 @@ const TryWardrobe = () => {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [instructions, setInstructions] = useState(''); // Custom styling instructions
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -51,36 +52,29 @@ const TryWardrobe = () => {
     }
   };
 
-  const handleSelectClothing = async (item, type) => {
-    if (generating) {
-      toast.error('Please wait for current try-on to complete');
-      return;
-    }
-
-    // Update selection first
-    const newTop = type === 'topwear' ? item : selectedTop;
-    const newBottom = type === 'bottomwear' ? item : selectedBottom;
-    
+  const handleSelectClothing = (item, type) => {
+    // Just update selection, don't generate yet
     if (type === 'topwear') {
       setSelectedTop(item);
     } else {
       setSelectedBottom(item);
     }
+  };
 
-    // Only generate if we have BOTH top and bottom selected
-    if (!newTop || !newBottom) {
-      toast('Select both topwear and bottomwear to generate preview', { icon: '👔👖' });
+  const handleGenerate = async () => {
+    if (generating) {
+      toast.error('Please wait for current try-on to complete');
       return;
     }
 
-    // Generate complete outfit with both items
-    await generateCompleteOutfit(newTop, newBottom);
-  };
+    if (!selectedTop && !selectedBottom) {
+      toast.error('Please select at least one clothing item');
+      return;
+    }
 
-  const generateCompleteOutfit = async (topItem, bottomItem) => {
     setGenerating(true);
     try {
-      // Always use the original profile photo
+      // Always use the original profile photo, never the generated preview
       const personImage = originalProfilePhoto || userProfile?.profilePhotoURL;
       
       if (!personImage) {
@@ -96,39 +90,75 @@ const TryWardrobe = () => {
         return;
       }
 
-      console.log('Generating complete outfit:');
+      console.log('Generating try-on with:');
+      console.log('  Top:', selectedTop?.url);
+      console.log('  Bottom:', selectedBottom?.url);
       console.log('  Person:', personImage);
-      console.log('  Top:', topItem.url);
-      console.log('  Bottom:', bottomItem.url);
+      console.log('  Instructions:', instructions);
 
-      // Generate try-on with top first
-      toast('Applying topwear...', { icon: '👕' });
-      const withTop = await generateTryOn(
-        personImage,
-        topItem.url,
-        'upper'
-      );
+      let result;
 
-      if (!withTop) {
-        toast.error('Failed to apply topwear');
+      // Case 1: Both topwear and bottomwear selected
+      if (selectedTop && selectedBottom) {
+        toast('Applying topwear...', { icon: '👕' });
+        const withTop = await generateTryOn(
+          personImage,
+          selectedTop.url,
+          'upper',
+          instructions
+        );
+
+        if (!withTop) {
+          toast.error('Failed to apply topwear');
+          return;
+        }
+
+        // Apply bottomwear to the result
+        toast('Applying bottomwear...', { icon: '👖' });
+        result = await generateTryOn(
+          withTop,
+          selectedBottom.url,
+          'lower',
+          instructions
+        );
+        
+        if (result) {
+          toast.success('Complete outfit generated! 🎉');
+        }
+      } 
+      // Case 2: Only topwear selected
+      else if (selectedTop) {
+        toast('Applying topwear...', { icon: '👕' });
+        result = await generateTryOn(
+          personImage,
+          selectedTop.url,
+          'upper',
+          instructions
+        );
+        if (result) {
+          toast.success('Topwear applied! 👕');
+        }
+      } 
+      // Case 3: Only bottomwear selected
+      else if (selectedBottom) {
+        toast('Applying bottomwear...', { icon: '👖' });
+        result = await generateTryOn(
+          personImage,
+          selectedBottom.url,
+          'lower',
+          instructions
+        );
+        if (result) {
+          toast.success('Bottomwear applied! 👖');
+        }
+      }
+
+      if (!result) {
+        toast.error('Failed to generate try-on');
         return;
       }
 
-      // Then apply bottom to the result
-      toast('Applying bottomwear...', { icon: '👖' });
-      const finalResult = await generateTryOn(
-        withTop, // Use the result from top application
-        bottomItem.url,
-        'lower'
-      );
-
-      if (!finalResult) {
-        toast.error('Failed to apply bottomwear');
-        return;
-      }
-
-      setPreviewImage(finalResult);
-      toast.success('Complete outfit generated! 🎉');
+      setPreviewImage(result);
     } catch (error) {
       console.error('Try-on error:', error);
       toast.error(error.message || 'Failed to generate try-on');
@@ -138,8 +168,8 @@ const TryWardrobe = () => {
   };
 
   const handleSaveOutfit = async () => {
-    if (!selectedTop || !selectedBottom) {
-      toast.error('Please select both topwear and bottomwear');
+    if (!selectedTop && !selectedBottom) {
+      toast.error('Please select at least one clothing item');
       return;
     }
 
@@ -162,8 +192,8 @@ const TryWardrobe = () => {
       }
 
       await saveOutfit(currentUser.uid, {
-        topwear_url: selectedTop.url,
-        bottomwear_url: selectedBottom.url,
+        topwear_url: selectedTop?.url || '',
+        bottomwear_url: selectedBottom?.url || '',
         output_image_url: outputUrl,
       });
 
@@ -245,10 +275,38 @@ const TryWardrobe = () => {
                 />
               </div>
 
+              {/* Styling Instructions */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Styling Instructions (Optional)
+                </label>
+                <textarea
+                  value={instructions}
+                  onChange={(e) => setInstructions(e.target.value)}
+                  placeholder="E.g., 'Keep the shirt untucked', 'Drape the saree elegantly', 'Make it formal style'..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
+                  rows={3}
+                  disabled={generating}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Add specific instructions to control how the outfit should look
+                </p>
+              </div>
+
+              {/* Generate Button */}
+              <button
+                onClick={handleGenerate}
+                disabled={(!selectedTop && !selectedBottom) || generating}
+                className="w-full flex items-center justify-center space-x-2 bg-primary-600 text-white py-4 rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg touch-feedback mb-4"
+              >
+                <Sparkles className="w-5 h-5" />
+                <span>{generating ? 'Generating...' : 'Generate Try-On'}</span>
+              </button>
+
               {/* Save Button */}
               <button
                 onClick={handleSaveOutfit}
-                disabled={!selectedTop || !selectedBottom || !previewImage || saving || generating}
+                disabled={(!selectedTop && !selectedBottom) || !previewImage || saving || generating}
                 className="w-full flex items-center justify-center space-x-2 bg-green-600 text-white py-4 rounded-lg font-medium hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg touch-feedback"
               >
                 {saving ? (

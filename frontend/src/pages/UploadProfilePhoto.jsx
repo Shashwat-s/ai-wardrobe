@@ -23,9 +23,10 @@ const UploadProfilePhoto = () => {
     try {
       const fileName = generateUniqueFileName(file.name);
       const path = `users/${currentUser.uid}/profile/${fileName}`;
-      
-      const downloadURL = await uploadFile(file, path);
-      
+
+      // Upload with background removal enabled for profile photos
+      const downloadURL = await uploadFile(file, path, true);
+
       // Update Firestore
       await updateUser(currentUser.uid, {
         profilePhotoURL: downloadURL,
@@ -36,9 +37,9 @@ const UploadProfilePhoto = () => {
         ...userProfile,
         profilePhotoURL: downloadURL,
       });
-      
+
       setCurrentPhoto(downloadURL);
-      toast.success('Profile photo updated!');
+      toast.success('Profile photo updated with background removed!');
     } catch (error) {
       console.error('Upload error:', error);
       throw error;
@@ -56,7 +57,7 @@ const UploadProfilePhoto = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      
+
       <div className="max-w-4xl mx-auto px-4 py-8 pb-24 md:pb-8">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800 mb-2">Upload Your Photo</h1>
@@ -72,7 +73,7 @@ const UploadProfilePhoto = () => {
                 <img
                   src={currentPhoto}
                   alt="Profile"
-                  className="w-full max-w-md mx-auto h-96 object-cover rounded-lg shadow-lg"
+                  className="w-full max-w-md mx-auto h-96 object-cover object-top rounded-lg shadow-lg"
                 />
                 <p className="mt-4 text-sm text-gray-600">
                   Looking good! You can update this photo anytime.
@@ -83,6 +84,7 @@ const UploadProfilePhoto = () => {
                 <h3 className="text-lg font-semibold mb-4">Upload a new photo</h3>
                 <ImageUploader
                   onUpload={handleUpload}
+                  enableBackgroundRemoval={false}
                   label="Replace Photo"
                 />
               </div>
@@ -99,6 +101,7 @@ const UploadProfilePhoto = () => {
             <div className="space-y-6">
               <ImageUploader
                 onUpload={handleUpload}
+                enableBackgroundRemoval={true}
                 label="Upload Full-Body Photo"
               />
 

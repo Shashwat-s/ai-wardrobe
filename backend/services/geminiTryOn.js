@@ -65,7 +65,7 @@ function getRetryMsFromError(err, fallbackMs = 20000) {
         return sec * 1000 + frac;
       }
     }
-  } catch {}
+  } catch { }
   return fallbackMs;
 }
 
@@ -81,11 +81,12 @@ async function imageUrlToBase64(imageUrl) {
     });
 
     const buffer = Buffer.from(response.data);
-    
+
     // Optimize image size to reduce API payload
+    // Reduced from 1024 to 768 for faster processing (approx 40% smaller payload)
     const optimized = await sharp(buffer)
-      .resize(1024, 1024, { fit: 'inside', withoutEnlargement: true })
-      .jpeg({ quality: 85 })
+      .resize(768, 768, { fit: 'inside', withoutEnlargement: true })
+      .jpeg({ quality: 75 }) // Reduced quality slightly for speed
       .toBuffer();
 
     return optimized.toString('base64');
@@ -142,15 +143,16 @@ function saveToCache(cacheKey, data) {
  * @param {string} personImageUrl - URL of the person/model image
  * @param {string} clothingImageUrl - URL of the clothing item
  * @param {string} type - Type of clothing ('upper' or 'lower')
+ * @param {string} instructions - Optional custom instructions for outfit style
  * @returns {Promise<string>} Base64 encoded result image
  */
-export async function generateTryOnWithGemini(personImageUrl, clothingImageUrl, type) {
+export async function generateTryOnWithGemini(personImageUrl, clothingImageUrl, type, instructions = '') {
   if (!genAI) {
     throw new Error('Gemini API not initialized');
   }
 
-  // Check cache first
-  const cacheKey = getCacheKey(personImageUrl, clothingImageUrl, type);
+  // Check cache first (include instructions in cache key)
+  const cacheKey = getCacheKey(personImageUrl, clothingImageUrl, type) + `|${instructions}`;
   const cached = getFromCache(cacheKey);
   if (cached) {
     return cached;
@@ -159,10 +161,18 @@ export async function generateTryOnWithGemini(personImageUrl, clothingImageUrl, 
   try {
     console.log('🤖 Generating try-on with Gemini API...');
     console.log(`   Type: ${type}`);
+    if (instructions) {
+      console.log(`   Instructions: ${instructions}`);
+    }
 
     // Build prompt - matching outfit-generator's prompt structure
     const garmentName = type === 'upper' ? 'top clothing' : 'bottom clothing';
-    const prompt = `Create a new image by combining the elements from the provided images. Take the ${garmentName} item from image 2, and place it naturally onto the body in image 1 so it looks like the person is wearing the selected outfit. Fit to body shape and pose, preserve garment proportions and textures, match lighting and shadows, handle occlusion by hair and arms. CRITICAL: The background must be completely white (#FFFFFF) - do not use black, transparent, or any other background color. Replace any existing background with solid white. Do not change the person identity or add accessories.`;
+    let prompt = `Create a new image by combining the elements from the provided images. Take the ${garmentName} item from image 2, and place it naturally onto the body in image 1 so it looks like the person is wearing the selected outfit. Fit to body shape and pose, preserve garment proportions and textures, match lighting and shadows, handle occlusion by hair and arms. CRITICAL: The background must be completely white (#FFFFFF) - do not use black, transparent, or any other background color. Replace any existing background with solid white. Do not change the person identity or add accessories.`;
+
+    // Add custom instructions if provided
+    if (instructions && instructions.trim()) {
+      prompt += `\n\nADDITIONAL STYLING INSTRUCTIONS: ${instructions.trim()}`;
+    }
 
     // Convert images to base64
     console.log('📥 Downloading and converting images...');
@@ -185,7 +195,7 @@ export async function generateTryOnWithGemini(personImageUrl, clothingImageUrl, 
     let resp;
     let attempt = 0;
     const maxAttempts = 3;
-    
+
     while (true) {
       try {
         resp = await genAI.models.generateContent({ model: MODEL, contents });
@@ -206,7 +216,7 @@ export async function generateTryOnWithGemini(personImageUrl, clothingImageUrl, 
     // Extract image from response - matching outfit-generator
     const parts = resp.candidates?.[0]?.content?.parts || [];
     const imagePart = parts.find((p) => p.inlineData?.data);
-    
+
     if (!imagePart) {
       const msg = parts
         .map((p) => p.text)
@@ -220,7 +230,7 @@ export async function generateTryOnWithGemini(personImageUrl, clothingImageUrl, 
     }
 
     const dataUrl = `data:image/jpeg;base64,${imagePart.inlineData.data}`;
-    
+
     console.log('✅ Try-on generated successfully with Gemini');
 
     // Cache the result
